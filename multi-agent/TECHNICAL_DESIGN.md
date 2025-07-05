@@ -4,6 +4,55 @@
 
 A platform that enables users to create complex workflows by chaining multiple state-of-the-art LLMs together through a visual drag-and-drop interface. The system processes prompts through configurable LLM sequences before delivering optimized outputs.
 
+## Recent Implementation Milestones (2024)
+
+### Backend Workflow Chaining & Debugging (COMPLETED)
+
+- **Node-Based Workflow Execution:**
+  - The backend supports execution of workflows as a sequence of nodes (input → LLM(s) → output), with each node able to receive the original prompt and outputs from previous nodes.
+  - Prompt chaining is implemented so that each LLM node can reference both the original input and the output of any previous node using template variables (e.g., `{input}`, `{llm-1}`).
+
+- **Per-Node Debugging:**
+  - The workflow execution engine now collects detailed debug information for each node, including:
+    - The prompt sent to the LLM
+    - The output received
+    - Any extracted recommendations or reasoning (e.g., from `<B_Edits>`, `<B_Reasoning>` tags)
+  - This debug info is returned to the frontend as a `nodeDebug` array, enabling full transparency and step-by-step inspection in the UI.
+
+- **Frontend Debug UI:**
+  - The workflow test interface now includes a "Show Debug" toggle, which displays the prompt, output, and extracted recommendations/reasoning for each node in the workflow.
+  - This allows users to visually trace the flow of data and logic through the workflow, making it much easier to debug and improve prompt chaining.
+
+- **Improved Prompt Chaining Logic:**
+  - The workflow definition and execution logic were updated so that refinement chains work as intended:
+    - Node 1 generates a base document.
+    - Node 2 reviews and suggests improvements, outputting recommendations and reasoning in tagged sections.
+    - Node 3 receives both the original document and the recommendations/reasoning, and is prompted to revise the original document by integrating the suggestions, outputting the improved, complete document.
+  - This pattern enables iterative, multi-step LLM workflows that can be easily extended or modified.
+
+### Implementation Notes & Recommendations for Future LLM Iterations
+
+- **Prompt Variable Substitution:**
+  - Template variables (e.g., `{input}`, `{llm-1}`, `{llm-2_edits}`) are substituted at runtime, allowing flexible chaining and context passing between nodes.
+  - For more advanced workflows, consider supporting richer variable extraction and passing (e.g., structured JSON outputs, multi-field extraction).
+
+- **Debugging & Transparency:**
+  - Per-node debug info is essential for diagnosing workflow issues and improving prompt engineering.
+  - Future LLM workflows should always expose node-level debug data, including raw prompts, outputs, and any intermediate reasoning or edits.
+
+- **Extensibility:**
+  - The current architecture supports easy addition of new node types (e.g., transforms, branching, custom logic) and new LLM providers.
+  - The prompt chaining and debug logic are designed to be provider-agnostic.
+
+- **Frontend/Backend Sync:**
+  - The frontend expects a `nodeDebug` array in the workflow execution response; backend and frontend must remain in sync on this contract for debugging to work.
+
+- **Recommendations for Next Iterations:**
+  - Consider moving more of the prompt variable extraction and chaining logic to the backend for consistency and maintainability.
+  - Add support for branching, parallel execution, and more complex data flows in the workflow engine.
+  - Expand the debug UI to show token usage, cost per node, and raw API responses for deeper analysis.
+  - Continue to iterate on prompt engineering patterns for multi-step refinement chains.
+
 ## System Architecture Overview
 
 ### Core Components
@@ -32,13 +81,14 @@ A platform that enables users to create complex workflows by chaining multiple s
 ### Phase 1: Project Setup & Foundation
 **Goal**: Get basic project structure and LLM wrappers working
 
-#### 1.1 Project Setup
-- Initialize Next.js 14 project with TypeScript
-- Set up Supabase database
-- Configure authentication with NextAuth.js
-- Basic error handling
+#### ✅ 1.1 Project Setup (COMPLETED)
+- ✅ Initialize Next.js 14 project with TypeScript
+- ✅ Set up Tailwind CSS
+- ✅ Install core dependencies
+- ✅ Create basic project structure
+- ✅ Basic error handling system
 
-#### 1.2 Core Interfaces
+#### ✅ 1.2 Core Interfaces (COMPLETED)
 ```typescript
 interface LLMProvider {
   id: string;
@@ -135,45 +185,47 @@ CREATE TABLE workflow_executions (
 );
 ```
 
-#### 1.4 LLM Provider Implementation
+#### ✅ 1.4 LLM Provider Implementation (COMPLETED)
 Build wrappers for:
-1. OpenAI (GPT-4, GPT-3.5-turbo)
-2. Anthropic Claude (Claude-3.5-sonnet, Claude-3-haiku)
-3. Google Gemini (Gemini-1.5-pro, Gemini-1.5-flash)
-4. DeepSeek (DeepSeek-V2)
+1. ✅ OpenAI (GPT-4, GPT-3.5-turbo)
+2. ✅ Anthropic Claude (Claude-3.5-sonnet, Claude-3-haiku)
+3. ⏳ Google Gemini (Gemini-1.5-pro, Gemini-1.5-flash) - TODO
+4. ⏳ DeepSeek (DeepSeek-V2) - TODO
 
-### Phase 2: Workflow Engine
+### ✅ Phase 2: Workflow Engine (COMPLETED)
 **Goal**: Build the core workflow execution engine
 
-#### 2.1 Execution Engine
+#### ✅ 2.1 Execution Engine (COMPLETED)
 Build basic execution engine that:
-- Takes a workflow and input prompt
-- Executes nodes in sequence
-- Handles errors gracefully
-- Returns final output
+- ✅ Takes a workflow and input prompt
+- ✅ Executes nodes in sequence
+- ✅ Handles errors gracefully
+- ✅ Returns final output
+- ✅ Cost tracking and execution metrics
+- ✅ Workflow validation
 
-#### 2.2 Prompt Processing
+#### ✅ 2.2 Prompt Processing (COMPLETED)
 Basic prompt cleaning and validation:
-- Clean input text
-- Validate prompt length
-- Basic error handling
+- ✅ Template variable substitution
+- ✅ Prompt processing pipeline
+- ✅ Basic error handling
 
-### Phase 3: Visual Editor
+### 🚧 Phase 3: Visual Editor (CURRENT FOCUS)
 **Goal**: Create drag-and-drop workflow builder
 
-#### 3.1 React Flow Integration
+#### 3.1 React Flow Integration (NEXT)
 Build visual workflow editor with:
-- Drag and drop nodes (LLM providers, input, output)
-- Connect nodes with edges
-- Basic node configuration panels
-- Save/load workflows
+- ⏳ Drag and drop nodes (LLM providers, input, output)
+- ⏳ Connect nodes with edges  
+- ⏳ Basic node configuration panels
+- ⏳ Save/load workflows
 
-#### 3.2 UI Components
-- Node library sidebar
-- Workflow canvas
-- Configuration panels
-- Execution controls
-- Results display
+#### 3.2 UI Components (NEXT)
+- ⏳ Node library sidebar
+- ⏳ Workflow canvas
+- ⏳ Configuration panels
+- ⏳ Execution controls
+- ⏳ Results display
 
 ### Phase 4: Template Library & User Features
 **Goal**: Build template system and user management

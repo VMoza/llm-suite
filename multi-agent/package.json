@@ -1,0 +1,42 @@
+{
+  "name": "multi-agent",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@auth/supabase-adapter": "^1.10.0",
+    "@sentry/nextjs": "^9.35.0",
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.50.3",
+    "next": "15.3.5",
+    "next-auth": "^4.24.11",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "reactflow": "^11.11.4",
+    "stripe": "^18.3.0",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^20.19.4",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.5",
+    "jest": "^30.0.4",
+    "jest-environment-jsdom": "^30.0.4",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  }
+}
