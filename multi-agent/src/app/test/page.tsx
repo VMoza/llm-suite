@@ -64,10 +64,10 @@ export default function TestPage() {
     const [workflowPrompt, setWorkflowPrompt] = useState('Artificial intelligence is transforming the world in many ways.');
     const [workflowLoading, setWorkflowLoading] = useState(false);
     const [workflowResult, setWorkflowResult] = useState<any>(null);
-    const [debugMode, setDebugMode] = useState(false);
+    const [debugMode, setDebugMode] = useState(true); // Debug on by default
 
     const models = {
-        openai: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+        openai: ['gpt-4o-mini', 'gpt-4.1', 'o3', 'gpt-4o', 'gpt-4o-2024-05-13', 'o4-mini', 'gpt-4.1-mini', 'gpt-4.1-nano', 'gpt-4-turbo', 'gpt-3.5-turbo'],
         anthropic: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-haiku-20240307'],
         google: ['gemini-pro', 'gemini-pro-vision'] // Placeholder - not implemented yet
     };
@@ -172,8 +172,8 @@ export default function TestPage() {
                         data: {
                             label: 'Step 2',
                             provider: 'openai',
-                            model: 'gpt-3.5-turbo',
-                            prompt: `You are step 2 in the chain of LLM prompts designed to provide ultimately refined output on an original prompt. Here is the original prompt: {input}. This was passed into LLM Step 1 which delivered the output {llm-1}. Your job is to take a look at its output, then provide recommendations to refine it stored in <B_Edits>, explained in <B_Reasoning> which is why you chose those Edits.`,
+                            model: 'gpt-4o-mini',
+                            prompt: '{llm-1}',
                             config: {
                                 temperature: 0.7,
                                 maxTokens: 400
@@ -187,9 +187,8 @@ export default function TestPage() {
                         data: {
                             label: 'Step 3',
                             provider: 'openai',
-                            model: 'gpt-4o',
-                            // New prompt: integrate edits into original doc
-                            prompt: `You are step 3 in the chain of LLM prompts. Here is the original design document: {llm-1}\nStep 2 delivered these recommendations <B_Edits>{llm-2_edits}</B_Edits> and reasoning <B_Reasoning>{llm-2_reasoning}</B_Reasoning>.\nYour job is to revise the original document, integrating the recommendations, and output the improved, complete design document.`,
+                            model: 'gpt-4o-mini',
+                            prompt: '{llm-2}',
                             config: {
                                 temperature: 0.7,
                                 maxTokens: 1200
@@ -374,7 +373,7 @@ export default function TestPage() {
                 )}
                 {/* Workflow Testing Tab */}
                 {activeTab === 'workflow' && (
-                    <div className="grid md:grid-cols-2 gap-8 w-full">
+                    <div className="grid md:grid-cols-3 gap-6 w-full">
                         {/* Configuration Panel */}
                         <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow flex flex-col gap-4">
                             <h2 className="text-lg font-bold text-white mb-2">Workflow Test</h2>
@@ -386,10 +385,11 @@ export default function TestPage() {
                             <button onClick={handleWorkflowTest} disabled={workflowLoading || !apiKeys.openai || !workflowPrompt} className="w-full bg-gradient-to-r from-pink-600 to-cyan-600 text-white py-3 rounded-lg font-bold text-base transition hover:from-pink-700 hover:to-cyan-700 disabled:opacity-50 disabled:cursor-not-allowed mt-2">{workflowLoading ? 'Running Workflow...' : 'Execute Workflow'}</button>
                             {(!apiKeys.openai || !workflowPrompt) && (<p className="text-xs text-slate-400 text-center mt-1">{!apiKeys.openai ? 'OpenAI API key required' : 'Input text required'}</p>)}
                         </div>
-                        {/* Results Panel */}
+
+                        {/* Debug Panel */}
                         <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow flex flex-col gap-4">
                             <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-lg font-bold text-white">Workflow Results</h2>
+                                <h2 className="text-lg font-bold text-white">Debug Information</h2>
                                 <button
                                     className={`px-3 py-1 rounded text-xs font-semibold border ${debugMode ? 'bg-blue-700 text-white border-blue-500' : 'bg-slate-700 text-slate-300 border-slate-600'} transition`}
                                     onClick={() => setDebugMode((d) => !d)}
@@ -406,12 +406,10 @@ export default function TestPage() {
                                                 <div className="bg-slate-900 rounded p-2">Status: <span className="text-white font-semibold">{workflowResult.execution.status}</span></div>
                                                 <div className="bg-slate-900 rounded p-2">Total Cost: <span className="text-white font-semibold">${workflowResult.execution.totalCost?.toFixed(7)}</span></div>
                                                 <div className="bg-slate-900 rounded p-2">Execution Time: <span className="text-white font-semibold">{workflowResult.execution.executionTimeMs}ms</span></div>
-                                                <div className="bg-slate-900 rounded p-2 flex items-center gap-1">Steps: <span className="text-white font-semibold">{workflowResult.execution.steps || 'N/A'}</span>
-                                                    <span className="ml-1 text-slate-400" title="This workflow is a fixed demo pipeline. Custom node configuration is coming soon!">ℹ️</span>
+                                                <div className="bg-slate-900 rounded p-2 flex items-center gap-1">Steps: <span className="text-white font-semibold">{workflowResult.execution.nodeDebug?.length || 'N/A'}</span>
+                                                    <span className="ml-1 text-slate-400" title="Number of LLM nodes executed">ℹ️</span>
                                                 </div>
                                             </div>
-                                            <div className="bg-slate-900 rounded p-3 mt-2 text-slate-300 text-xs">Input: {workflowResult.execution.inputPrompt}</div>
-                                            <div className="bg-slate-900 rounded p-4 mt-2 text-white text-sm whitespace-pre-wrap overflow-y-auto max-h-72">{workflowResult.execution.outputResult}</div>
                                             {debugMode && workflowResult.execution.nodeDebug && (
                                                 <div className="mt-4">
                                                     <h3 className="text-base font-bold text-blue-300 mb-2">Debug: Node-by-Node Details</h3>
@@ -453,6 +451,37 @@ export default function TestPage() {
                                     <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center mb-2">⚡</div>
                                     <p className="text-base font-medium">Execute workflow to see results here</p>
                                     <p className="text-xs text-slate-500 mt-1">Configure your input and click "Execute Workflow"</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Final Output Panel */}
+                        <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow flex flex-col gap-4">
+                            <h2 className="text-lg font-bold text-white mb-2">Final Output</h2>
+                            {workflowResult ? (
+                                <div className="space-y-4">
+                                    {workflowResult.success ? (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center text-green-400 font-semibold">✓ Final Result</div>
+                                            <div className="bg-slate-900 rounded p-4 text-white text-sm whitespace-pre-wrap overflow-y-auto max-h-96 leading-relaxed">
+                                                {workflowResult.execution.outputResult}
+                                            </div>
+                                            <div className="text-xs text-slate-400 mt-2">
+                                                Original Input: <span className="text-slate-300">{workflowResult.execution.inputPrompt}</span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center text-red-400 font-semibold">✗ No Output</div>
+                                            <div className="bg-slate-900 rounded p-3 text-red-300 text-xs">Workflow failed to complete</div>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center text-slate-400 py-10 flex flex-col items-center justify-center">
+                                    <div className="w-10 h-10 bg-slate-700 rounded-full flex items-center justify-center mb-2">📄</div>
+                                    <p className="text-base font-medium">Final output will appear here</p>
+                                    <p className="text-xs text-slate-500 mt-1">The refined result from your workflow</p>
                                 </div>
                             )}
                         </div>

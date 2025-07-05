@@ -57,6 +57,10 @@ export class WorkflowExecutionEngine {
             execution.status = 'completed';
             execution.updatedAt = new Date();
 
+            // Debug: Log the final output length
+            console.log('Final output length:', result.output?.length || 0);
+            console.log('Final output preview:', result.output?.substring(0, 100) + '...');
+
             // --- Collect nodeDebug info ---
             const nodeDebug: Array<any> = [];
             for (const step of result.steps) {
@@ -109,7 +113,7 @@ export class WorkflowExecutionEngine {
 
         // Process current node
         if (currentNode.type === 'llm') {
-            const step = await this.executeLLMNode(currentNode, currentOutput);
+            const step = await this.executeLLMNode(currentNode, input, context);
             steps.push(step);
             totalCost += step.cost;
             currentOutput = step.output || currentOutput;
@@ -134,13 +138,15 @@ export class WorkflowExecutionEngine {
 
         // Handle output node
         if (nextNode.type === 'output') {
+            console.log('Reaching output node, final output length:', currentOutput?.length || 0);
+            console.log('Final output preview:', currentOutput?.substring(0, 200) + '...');
             return { output: currentOutput, totalCost, steps };
         }
 
         // Recursively execute next node
         const result = await this.executeFromNode(
             nextNode,
-            currentOutput,
+            currentOutput, // Pass current output to next node for chaining
             nodes,
             edges,
             context
@@ -153,13 +159,13 @@ export class WorkflowExecutionEngine {
         };
     }
 
-    private async executeLLMNode(node: WorkflowNode, input: string): Promise<ExecutionStep> {
+    private async executeLLMNode(node: WorkflowNode, input: string, context: Map<string, any>): Promise<ExecutionStep> {
         const startTime = Date.now();
 
         const step: ExecutionStep = {
             nodeId: node.id,
             provider: node.data.provider || 'openai',
-            model: node.data.model || 'gpt-3.5-turbo',
+            model: node.data.model || 'gpt-4o-mini',
             input,
             cost: 0,
             executionTime: 0,
@@ -167,28 +173,50 @@ export class WorkflowExecutionEngine {
         };
 
         try {
+            console.log(`Starting LLM execution for node ${node.id}`);
+
             const provider = providerFactory.getProvider(node.data.provider as ProviderType);
+            console.log(`Provider obtained: ${provider.id}`);
 
             const config: LLMConfig = {
-                model: node.data.model || 'gpt-3.5-turbo',
+                model: node.data.model || 'gpt-4o-mini',
                 temperature: node.data.config?.temperature || 0.7,
                 maxTokens: node.data.config?.maxTokens || 1000,
                 systemPrompt: node.data.config?.systemPrompt,
                 ...node.data.config
             };
+            console.log(`Config prepared for ${node.id}:`, config);
+
+            // Build template variables from context
+            const templateVariables = this.buildTemplateVariables(input, context);
 
             // Process the prompt template
             const processedPrompt = this.processPromptTemplate(
                 node.data.prompt || '{input}',
-                { input }
+                templateVariables
             );
+            console.log(`Processed prompt for ${node.id}:`, processedPrompt.substring(0, 100) + '...');
 
-            const response = await provider.execute(processedPrompt, config);
+            step.input = processedPrompt; // Store the actual processed prompt for debugging
+
+            console.log(`Calling provider.execute for ${node.id}`);
+            let response;
+            try {
+                response = await provider.execute(processedPrompt, config);
+                console.log(`Provider response received for ${node.id}:`, response);
+            } catch (providerError) {
+                console.error(`Provider execution failed for ${node.id}:`, providerError);
+                throw providerError;
+            }
 
             step.output = response.content;
             step.cost = response.cost;
             step.executionTime = Date.now() - startTime;
             step.status = 'completed';
+
+            // Debug: Log LLM response
+            console.log(`LLM Node ${node.id} output length:`, response.content?.length || 0);
+            console.log(`LLM Node ${node.id} output preview:`, response.content?.substring(0, 100) + '...');
 
         } catch (error) {
             step.status = 'failed';
@@ -197,6 +225,42 @@ export class WorkflowExecutionEngine {
         }
 
         return step;
+    }
+
+    private buildTemplateVariables(input: string, context: Map<string, any>): Record<string, any> {
+        const variables: Record<string, any> = {
+            input: input // Original input prompt
+        };
+
+        // Add all node outputs from context
+        for (const [nodeId, output] of context.entries()) {
+            variables[nodeId] = output;
+
+            // Extract special variables from LLM outputs
+            if (typeof output === 'string') {
+                // Extract <B_Edits> content
+                const editsMatch = output.match(/<B_Edits>([\s\S]*?)<\/B_Edits>/);
+                if (editsMatch) {
+                    variables[`${nodeId}_edits`] = editsMatch[1].trim();
+                }
+
+                // Extract <B_Reasoning> content
+                const reasoningMatch = output.match(/<B_Reasoning>([\s\S]*?)<\/B_Reasoning>/);
+                if (reasoningMatch) {
+                    variables[`${nodeId}_reasoning`] = reasoningMatch[1].trim();
+                }
+            }
+        }
+
+        // Debug: Log template variables
+        console.log('Template variables keys:', Object.keys(variables));
+        for (const [key, value] of Object.entries(variables)) {
+            if (typeof value === 'string') {
+                console.log(`${key}: ${value.length} characters`);
+            }
+        }
+
+        return variables;
     }
 
     private processPromptTemplate(template: string, variables: Record<string, any>): string {

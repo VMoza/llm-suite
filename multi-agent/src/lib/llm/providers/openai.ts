@@ -4,8 +4,15 @@ export class OpenAIProvider implements LLMProvider {
     id = 'openai';
     name = 'OpenAI';
     models = [
-        'gpt-4o',
         'gpt-4o-mini',
+        'gpt-4.1',
+        'o3',
+        'gpt-4o',
+        'gpt-4o-2024-05-13',
+        'o4-mini',
+        'gpt-4.1-mini',
+        'gpt-4.1-nano',
+        // Legacy models
         'gpt-4-turbo',
         'gpt-4-turbo-preview',
         'gpt-3.5-turbo',
@@ -91,17 +98,25 @@ export class OpenAIProvider implements LLMProvider {
     }
 
     private calculateCost(model: string, usage: any): number {
-        // OpenAI pricing per 1K tokens (as of 2024)
+        // OpenAI pricing per 1K tokens (updated with new models)
         const pricing: Record<string, { input: number; output: number }> = {
-            'gpt-4o': { input: 0.005, output: 0.015 },
-            'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+            // New GPT models (per 1K tokens)
+            'gpt-4.1': { input: 0.002, output: 0.008 },
+            'o3': { input: 0.002, output: 0.008 },
+            'gpt-4o': { input: 0.005, output: 0.020 },
+            'gpt-4o-2024-05-13': { input: 0.005, output: 0.020 },
+            'o4-mini': { input: 0.0011, output: 0.0044 },
+            'gpt-4.1-mini': { input: 0.0004, output: 0.0016 },
+            'gpt-4o-mini': { input: 0.0006, output: 0.0024 },
+            'gpt-4.1-nano': { input: 0.0001, output: 0.0004 },
+            // Legacy models
             'gpt-4-turbo': { input: 0.01, output: 0.03 },
             'gpt-4-turbo-preview': { input: 0.01, output: 0.03 },
             'gpt-3.5-turbo': { input: 0.0015, output: 0.002 },
             'gpt-3.5-turbo-16k': { input: 0.003, output: 0.004 },
         };
 
-        const modelPricing = pricing[model] || pricing['gpt-3.5-turbo'];
+        const modelPricing = pricing[model] || pricing['gpt-4o-mini'];
         const inputCost = (usage.prompt_tokens / 1000) * modelPricing.input;
         const outputCost = (usage.completion_tokens / 1000) * modelPricing.output;
 
