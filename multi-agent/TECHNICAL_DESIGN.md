@@ -210,15 +210,27 @@ Basic prompt cleaning and validation:
 - ✅ Prompt processing pipeline
 - ✅ Basic error handling
 
-### 🚧 Phase 3: Visual Editor (CURRENT FOCUS)
+### 🚧 Phase 3: Visual Editor (IN PROGRESS)
 **Goal**: Create drag-and-drop workflow builder
 
-#### 3.1 React Flow Integration (NEXT)
-Build visual workflow editor with:
-- ⏳ Drag and drop nodes (LLM providers, input, output)
-- ⏳ Connect nodes with edges  
-- ⏳ Basic node configuration panels
-- ⏳ Save/load workflows
+#### ✅ 3.1 React Flow Integration (COMPLETED)
+- Implemented visual workflow editor using React Flow.
+- Users can drag and drop nodes (Input, LLM, Output) from a sidebar onto the canvas.
+- Nodes are styled with a custom dark theme for consistency with the app.
+- Nodes can be connected with edges.
+- Sidebar and nav bar are visually integrated and do not overlap.
+- All node types use a single custom node type for consistent appearance.
+- Code: See `src/app/workflow/page.tsx` for the main editor implementation and node logic.
+- Nav bar: See `src/app/layout.tsx` for navigation and dark theme integration.
+
+**How to verify:**
+- Visit `/workflow` in the running app.
+- Drag Input, LLM, and Output nodes onto the canvas. All nodes should look identical (dark background, blue border, white text).
+- Connect nodes with edges. Move nodes around. Sidebar should not overlap nav bar.
+
+**Where to continue:**
+- Next: Implement node configuration panels (click a node to edit its properties, e.g., LLM provider, model, prompt, etc.).
+- Future LLMs should start in `src/app/workflow/page.tsx` and extend the node data/config logic.
 
 #### 3.2 UI Components (NEXT)
 - ⏳ Node library sidebar
